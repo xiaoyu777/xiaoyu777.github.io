@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>提示词优化器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <span class="badge">Prompt Optimizer</span>
+      <h1>提示词优化器</h1>
+      <p>输入拟定的提示词，选择参数，一键生成更清晰、更可执行的优化版本。</p>
+    </header>
+
+    <main class="grid">
+      <section class="panel">
+        <h2>原始提示词</h2>
+        <label class="field">
+          <span>提示词内容</span>
+          <textarea id="basePrompt" placeholder="例如：帮我写一份新品发布会的营销文案，突出创新和价格优势。"></textarea>
+        </label>
+        <div class="field-group">
+          <label class="field">
+            <span>目标受众</span>
+            <input id="audience" type="text" placeholder="例如：科技媒体编辑" />
+          </label>
+          <label class="field">
+            <span>输出语言</span>
+            <input id="language" type="text" value="中文" />
+          </label>
+        </div>
+        <label class="field">
+          <span>补充背景信息</span>
+          <textarea id="context" placeholder="例如：新品为首款可折叠平板，价格区间 3999-4999 元。"></textarea>
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>优化参数</h2>
+        <div class="field-group">
+          <label class="field">
+            <span>语气风格</span>
+            <select id="tone">
+              <option value="专业、可信">专业、可信</option>
+              <option value="亲切、易懂">亲切、易懂</option>
+              <option value="有说服力">有说服力</option>
+              <option value="幽默、有趣">幽默、有趣</option>
+              <option value="学术、严谨">学术、严谨</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>输出长度</span>
+            <select id="length">
+              <option value="简洁">简洁</option>
+              <option value="适中" selected>适中</option>
+              <option value="详细">详细</option>
+            </select>
+          </label>
+        </div>
+        <div class="field-group">
+          <label class="field">
+            <span>格式要求</span>
+            <select id="format">
+              <option value="要点清单">要点清单</option>
+              <option value="结构化段落" selected>结构化段落</option>
+              <option value="表格">表格</option>
+              <option value="步骤流程">步骤流程</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>角色设定</span>
+            <input id="role" type="text" placeholder="例如：资深市场顾问" />
+          </label>
+        </div>
+        <label class="field">
+          <span>约束条件 / 不要包含</span>
+          <input id="constraints" type="text" placeholder="例如：避免夸大承诺，不要提到竞品。" />
+        </label>
+        <label class="toggle">
+          <input id="includeExample" type="checkbox" checked />
+          <span>提供 1 个示例输出</span>
+        </label>
+        <label class="toggle">
+          <input id="includeChecklist" type="checkbox" checked />
+          <span>输出前自检关键要求</span>
+        </label>
+      </section>
+
+      <section class="panel output">
+        <div class="output-header">
+          <div>
+            <h2>优化后的提示词</h2>
+            <p>可直接复制到你的 AI 对话中使用。</p>
+          </div>
+          <div class="output-actions">
+            <button id="generateBtn" class="primary">生成优化提示词</button>
+            <button id="copyBtn" class="ghost">复制</button>
+          </div>
+        </div>
+        <textarea id="result" readonly placeholder="点击“生成优化提示词”后自动填充。"></textarea>
+        <p id="copyHint" class="hint" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
