@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Admin / 测验管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f4f8;
+  color: #333;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+/* Login Gate */
+.login-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  max-width: 360px;
+  width: 100%;
+}
+
+.login-box h2 { color: #0077b6; margin-bottom: 8px; }
+.login-box p { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+
+.login-box input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #dde3ea;
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 16px;
+  font-family: inherit;
+}
+
+.login-box input:focus { outline: none; border-color: #0077b6; }
+
+.login-box button {
+  background: linear-gradient(135deg, #0077b6, #00a8e8);
+  color: #fff;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  font-weight: 600;
+}
+
+.login-error { color: #dc3545; font-size: 0.85rem; margin-top: 8px; display: none; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0077b6, #00a8e8);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,119,182,0.2);
+}
+
+.header h1 { font-size: 1.2rem; font-weight: 700; }
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.btn-sm {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-sm:hover { background: rgba(255,255,255,0.35); }
+
+/* Stats Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0077b6;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Charts */
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .chart-row { grid-template-columns: 1fr; }
+}
+
+.chart-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.chart-card h3 {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 12px;
+}
+
+/* QR Code */
+.qr-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.qr-section h3 { color: #555; margin-bottom: 4px; font-size: 0.95rem; }
+.qr-section p { color: #999; font-size: 0.8rem; margin-bottom: 16px; }
+
+#qrCanvas {
+  display: inline-block;
+  padding: 12px;
+  background: #fff;
+  border: 2px solid #e8ecf0;
+  border-radius: 12px;
+}
+
+.qr-url {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #0077b6;
+  word-break: break-all;
+}
+
+/* Table */
+.table-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow-x: auto;
+}
+
+.table-card h3 {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 12px;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-export { background: #e8f4f8; color: #0077b6; }
+.btn-export:hover { background: #d1ecf5; }
+.btn-clear { background: #ffebee; color: #c62828; }
+.btn-clear:hover { background: #ffcdd2; }
+.btn-refresh { background: #e8f5e9; color: #2e7d32; }
+.btn-refresh:hover { background: #c8e6c9; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th {
+  background: #f8f9fa;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #e8ecf0;
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+tr:hover td { background: #f8fbfd; }
+
+.badge {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.badge-ok { background: #e8f5e9; color: #2e7d32; }
+.badge-fail { background: #ffebee; color: #c62828; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+}
+
+/* Footer */
+.footer { text-align: center; padding: 16px; color: #aaa; font-size: 0.75rem; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Login Gate -->
+<div class="login-gate" id="loginGate">
+  <div class="login-box">
+    <h2 id="loginTitle">教师登录</h2>
+    <p id="loginSubtitle">请输入管理密码</p>
+    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()" id="loginBtn">登录 / Login</button>
+    <div class="login-error" id="loginError">密码错误 / Wrong password</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="container hidden" id="dashboard">
+  <div class="header">
+    <h1 id="dashTitle">教师仪表板 / Admin Dashboard</h1>
+    <div class="header-actions">
+      <button class="btn-sm" id="langBtn" onclick="toggleLang()">EN</button>
+      <button class="btn-sm" onclick="logout()" id="logoutBtn">退出</button>
+    </div>
+  </div>
+
+  <!-- QR Code -->
+  <div class="qr-section">
+    <h3 id="qrTitle">学生扫码入口 / Student QR Code</h3>
+    <p id="qrSubtitle">投影此二维码，学生扫描即可答题</p>
+    <div id="qrCanvas"></div>
+    <div class="qr-url" id="qrUrl"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label" id="statTotalLabel">参与人数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAvg">--</div>
+      <div class="stat-label" id="statAvgLabel">平均分</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statHigh">--</div>
+      <div class="stat-label" id="statHighLabel">最高分</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statLow">--</div>
+      <div class="stat-label" id="statLowLabel">最低分</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3 id="chartDistTitle">成绩分布 / Score Distribution</h3>
+      <canvas id="distChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 id="chartAccTitle">各题正确率 / Question Accuracy</h3>
+      <canvas id="accChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="table-card">
+    <h3 id="tableTitle">学生成绩明细 / Student Results</h3>
+    <div class="table-actions">
+      <button class="btn-action btn-refresh" onclick="refreshData()" id="btnRefresh">刷新</button>
+      <button class="btn-action btn-export" onclick="exportCSV()" id="btnExport">导出CSV</button>
+      <button class="btn-action btn-clear" onclick="clearData()" id="btnClear">清除数据</button>
+    </div>
+    <div id="tableContainer"></div>
+  </div>
+
+  <div class="footer">Powered by GitHub Pages</div>
+</div>
+
+<script>
+// ==================== i18n ====================
+let lang = localStorage.getItem('quizLang') || 'zh';
+
+const UI = {
+  loginTitle:    { zh: '教师登录', en: 'Admin Login' },
+  loginSubtitle: { zh: '请输入管理密码', en: 'Enter admin password' },
+  loginBtn:      { zh: '登录 / Login', en: 'Login' },
+  loginError:    { zh: '密码错误 / Wrong password', en: 'Wrong password' },
+  dashTitle:     { zh: '教师仪表板', en: 'Admin Dashboard' },
+  logout:        { zh: '退出', en: 'Logout' },
+  qrTitle:       { zh: '学生扫码入口', en: 'Student QR Code' },
+  qrSubtitle:    { zh: '投影此二维码，学生扫描即可答题', en: 'Project this QR code for students to scan and take the quiz' },
+  statTotalLabel:{ zh: '参与人数', en: 'Total Students' },
+  statAvgLabel:  { zh: '平均分', en: 'Average Score' },
+  statHighLabel: { zh: '最高分', en: 'Highest' },
+  statLowLabel:  { zh: '最低分', en: 'Lowest' },
+  chartDistTitle:{ zh: '成绩分布', en: 'Score Distribution' },
+  chartAccTitle: { zh: '各题正确率', en: 'Question Accuracy' },
+  tableTitle:    { zh: '学生成绩明细', en: 'Student Results' },
+  refresh:       { zh: '刷新', en: 'Refresh' },
+  exportCSV:     { zh: '导出CSV', en: 'Export CSV' },
+  clearData:     { zh: '清除数据', en: 'Clear Data' },
+  name:          { zh: '姓名', en: 'Name' },
+  sid:           { zh: '学号', en: 'ID' },
+  score:         { zh: '成绩', en: 'Score' },
+  time:          { zh: '提交时间', en: 'Time' },
+  noData:        { zh: '暂无数据，等待学生提交答卷...', en: 'No data yet. Waiting for student submissions...' },
+  confirmClear:  { zh: '确定要清除所有数据吗？此操作不可撤销。', en: 'Clear all data? This cannot be undone.' },
+};
+
+function t(key) { return UI[key] ? (UI[key][lang] || UI[key].zh) : key; }
+
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('quizLang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'EN' : '中文';
+  document.getElementById('loginTitle').textContent = t('loginTitle');
+  document.getElementById('loginSubtitle').textContent = t('loginSubtitle');
+  document.getElementById('loginBtn').textContent = t('loginBtn');
+  document.getElementById('dashTitle').textContent = t('dashTitle');
+  document.getElementById('logoutBtn').textContent = t('logout');
+  document.getElementById('qrTitle').textContent = t('qrTitle');
+  document.getElementById('qrSubtitle').textContent = t('qrSubtitle');
+  document.getElementById('statTotalLabel').textContent = t('statTotalLabel');
+  document.getElementById('statAvgLabel').textContent = t('statAvgLabel');
+  document.getElementById('statHighLabel').textContent = t('statHighLabel');
+  document.getElementById('statLowLabel').textContent = t('statLowLabel');
+  document.getElementById('chartDistTitle').textContent = t('chartDistTitle');
+  document.getElementById('chartAccTitle').textContent = t('chartAccTitle');
+  document.getElementById('tableTitle').textContent = t('tableTitle');
+  document.getElementById('btnRefresh').textContent = t('refresh');
+  document.getElementById('btnExport').textContent = t('exportCSV');
+  document.getElementById('btnClear').textContent = t('clearData');
+}
+
+// ==================== Auth (simple client-side) ====================
+// Default password: "shock2024" — SHA-256 hash below
+const PASS_HASH = 'fe986a967493d2cea8677ebd1ca5987348f112a090153885e395910015c99eee';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function doLogin() {
+  const pw = document.getElementById('passwordInput').value;
+  const hash = await sha256(pw);
+  if (hash === PASS_HASH) {
+    sessionStorage.setItem('adminAuth', '1');
+    showDashboard();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('adminAuth');
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('loginGate').style.display = 'flex';
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function showDashboard() {
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('dashboard').classList.remove('hidden');
+  generateQR();
+  refreshData();
+}
+
+// ==================== QR Code ====================
+function generateQR() {
+  const url = window.location.href.replace(/admin\.html.*$/, 'index.html');
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  document.getElementById('qrCanvas').innerHTML = qr.createSvgTag(6, 0);
+  document.getElementById('qrUrl').textContent = url;
+}
+
+// ==================== Data ====================
+function getResults() {
+  try {
+    return JSON.parse(localStorage.getItem('shockQuizResults') || '[]');
+  } catch { return []; }
+}
+
+const CORRECT_ANSWERS = ['B', 'C', 'D', 'D', 'C'];
+
+let distChart = null;
+let accChart = null;
+
+function refreshData() {
+  const results = getResults();
+  updateStats(results);
+  updateCharts(results);
+  updateTable(results);
+}
+
+function updateStats(results) {
+  const n = results.length;
+  document.getElementById('statTotal').textContent = n;
+  if (n === 0) {
+    document.getElementById('statAvg').textContent = '--';
+    document.getElementById('statHigh').textContent = '--';
+    document.getElementById('statLow').textContent = '--';
+    return;
+  }
+  const scores = results.map(r => r.score);
+  const avg = (scores.reduce((a, b) => a + b, 0) / n).toFixed(1);
+  document.getElementById('statAvg').textContent = avg;
+  document.getElementById('statHigh').textContent = Math.max(...scores);
+  document.getElementById('statLow').textContent = Math.min(...scores);
+}
+
+function updateCharts(results) {
+  // Score distribution
+  const bins = [0, 0, 0, 0, 0]; // 0-20, 21-40, 41-60, 61-80, 81-100
+  results.forEach(r => {
+    if (r.score <= 20) bins[0]++;
+    else if (r.score <= 40) bins[1]++;
+    else if (r.score <= 60) bins[2]++;
+    else if (r.score <= 80) bins[3]++;
+    else bins[4]++;
+  });
+
+  const distLabels = ['0-20', '21-40', '41-60', '61-80', '81-100'];
+
+  if (distChart) distChart.destroy();
+  distChart = new Chart(document.getElementById('distChart'), {
+    type: 'bar',
+    data: {
+      labels: distLabels,
+      datasets: [{
+        data: bins,
+        backgroundColor: ['#ffcdd2', '#ffe0b2', '#fff9c4', '#c8e6c9', '#b2dfdb'],
+        borderColor: ['#ef5350', '#ff9800', '#fdd835', '#66bb6a', '#26a69a'],
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+      }
+    }
+  });
+
+  // Per-question accuracy
+  const qCorrect = [0, 0, 0, 0, 0];
+  results.forEach(r => {
+    if (r.answers && r.answers.length === 5) {
+      r.answers.forEach((ans, i) => {
+        if (ans === CORRECT_ANSWERS[i]) qCorrect[i]++;
+      });
+    }
+  });
+
+  const n = results.length || 1;
+  const accData = qCorrect.map(c => Math.round(c / n * 100));
+  const qLabels = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'];
+
+  if (accChart) accChart.destroy();
+  accChart = new Chart(document.getElementById('accChart'), {
+    type: 'bar',
+    data: {
+      labels: qLabels,
+      datasets: [{
+        data: accData,
+        backgroundColor: accData.map(v => v >= 70 ? '#b2dfdb' : v >= 50 ? '#fff9c4' : '#ffcdd2'),
+        borderColor: accData.map(v => v >= 70 ? '#26a69a' : v >= 50 ? '#fdd835' : '#ef5350'),
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+function updateTable(results) {
+  const container = document.getElementById('tableContainer');
+  if (results.length === 0) {
+    container.innerHTML = `<div class="empty-state">${t('noData')}</div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>#</th>
+    <th>${t('name')}</th>
+    <th>${t('sid')}</th>
+    <th>${t('score')}</th>
+    <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
+    <th>${t('time')}</th>
+  </tr></thead><tbody>`;
+
+  results.forEach((r, idx) => {
+    const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '--';
+    html += `<tr>
+      <td>${idx + 1}</td>
+      <td>${escHtml(r.studentName)}</td>
+      <td>${escHtml(r.studentId || '--')}</td>
+      <td><strong>${r.score}</strong></td>`;
+    if (r.answers && r.answers.length === 5) {
+      r.answers.forEach((ans, i) => {
+        const ok = ans === CORRECT_ANSWERS[i];
+        html += `<td><span class="badge ${ok ? 'badge-ok' : 'badge-fail'}">${ok ? '✓' : '✗'}</span></td>`;
+      });
+    } else {
+      html += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>';
+    }
+    html += `<td style="font-size:0.78rem;color:#888;">${ts}</td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ==================== CSV Export ====================
+function exportCSV() {
+  const results = getResults();
+  if (results.length === 0) return;
+
+  const header = 'Name,Student ID,Score,Q1,Q2,Q3,Q4,Q5,Timestamp\n';
+  const rows = results.map(r => {
+    const answers = (r.answers || []).map((a, i) => a === CORRECT_ANSWERS[i] ? '1' : '0');
+    while (answers.length < 5) answers.push('');
+    return [
+      '"' + (r.studentName || '').replace(/"/g, '""') + '"',
+      '"' + (r.studentId || '').replace(/"/g, '""') + '"',
+      r.score,
+      ...answers,
+      r.timestamp || ''
+    ].join(',');
+  }).join('\n');
+
+  const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'shock_quiz_results.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ==================== Clear Data ====================
+function clearData() {
+  if (!confirm(t('confirmClear'))) return;
+  localStorage.removeItem('shockQuizResults');
+  refreshData();
+}
+
+// ==================== Init ====================
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+  if (sessionStorage.getItem('adminAuth') === '1') {
+    showDashboard();
+  }
+});
+</script>
+</body>
+</html>

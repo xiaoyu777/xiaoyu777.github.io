@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medical Quiz: Shock / 医学测验：休克</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f4f8;
+  color: #333;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0077b6, #00a8e8);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,119,182,0.2);
+}
+
+.header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lang-toggle {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.lang-toggle:hover { background: rgba(255,255,255,0.35); }
+
+/* Student Info */
+.student-info {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.student-info h2 {
+  font-size: 1rem;
+  color: #0077b6;
+  margin-bottom: 12px;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #dde3ea;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #0077b6;
+  box-shadow: 0 0 0 3px rgba(0,119,182,0.1);
+}
+
+/* Question Card */
+.question-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
+}
+
+.question-card.unanswered {
+  border: 2px solid #dc3545;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.q-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.q-number {
+  background: #e8f4f8;
+  color: #0077b6;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.q-points {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.q-stem {
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  line-height: 1.7;
+  color: #2c3e50;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option-label {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1.5px solid #e8ecf0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.option-label:hover {
+  background: #f0f7fb;
+  border-color: #b3d9ea;
+}
+
+.option-label input[type="radio"] {
+  display: none;
+}
+
+.option-label .radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.option-label input[type="radio"]:checked ~ .radio-custom {
+  border-color: #0077b6;
+}
+
+.option-label input[type="radio"]:checked ~ .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #0077b6;
+}
+
+.option-label input[type="radio"]:checked ~ .option-text {
+  color: #0077b6;
+  font-weight: 500;
+}
+
+/* Result styles on options */
+.option-label.correct-answer {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.option-label.wrong-answer {
+  background: #ffebee;
+  border-color: #ef5350;
+}
+
+.option-label.correct-answer .radio-custom { border-color: #4caf50; }
+.option-label.correct-answer .radio-custom::after { background: #4caf50; }
+.option-label.wrong-answer .radio-custom { border-color: #ef5350; }
+.option-label.wrong-answer .radio-custom::after { background: #ef5350; }
+
+.explanation {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-left: 3px solid #0077b6;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.7;
+  display: none;
+}
+
+.explanation.visible { display: block; }
+
+/* Submit Button */
+.submit-section {
+  text-align: center;
+  margin: 24px 0;
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #0077b6, #00a8e8);
+  color: #fff;
+  border: none;
+  padding: 14px 48px;
+  border-radius: 28px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,119,182,0.3);
+  font-family: inherit;
+}
+
+.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,119,182,0.4); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* Results Panel */
+.results-panel {
+  display: none;
+  text-align: center;
+}
+
+.results-panel.visible { display: block; }
+
+.score-display {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.score-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 6px solid;
+}
+
+.score-circle.high { border-color: #4caf50; color: #4caf50; }
+.score-circle.mid { border-color: #ff9800; color: #ff9800; }
+.score-circle.low { border-color: #ef5350; color: #ef5350; }
+
+.score-number { font-size: 2.8rem; font-weight: 700; line-height: 1; }
+.score-total { font-size: 0.9rem; color: #999; margin-top: 2px; }
+
+.score-label {
+  font-size: 1rem;
+  color: #666;
+}
+
+.q-results-grid {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.q-result-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.q-result-badge.correct { background: #e8f5e9; color: #2e7d32; }
+.q-result-badge.wrong { background: #ffebee; color: #c62828; }
+
+.result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-details, .btn-retake {
+  padding: 12px 28px;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  border: none;
+}
+
+.btn-details {
+  background: #0077b6;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,119,182,0.2);
+}
+
+.btn-details:hover { background: #006299; }
+
+.btn-retake {
+  background: #fff;
+  color: #0077b6;
+  border: 1.5px solid #0077b6;
+}
+
+.btn-retake:hover { background: #f0f7fb; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: #aaa;
+  font-size: 0.75rem;
+}
+
+/* Hidden */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1 id="title">医学测验：休克</h1>
+    <button class="lang-toggle" id="langBtn" onclick="toggleLang()">EN</button>
+  </div>
+
+  <!-- Quiz Form -->
+  <div id="quizForm">
+    <!-- Student Info -->
+    <div class="student-info">
+      <h2 id="infoTitle">学生信息</h2>
+      <div class="input-row">
+        <div class="input-group">
+          <label id="nameLabel" for="studentName">姓名 *</label>
+          <input type="text" id="studentName" required>
+        </div>
+        <div class="input-group">
+          <label id="idLabel" for="studentId">学号</label>
+          <input type="text" id="studentId">
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Container -->
+    <div id="questionsContainer"></div>
+
+    <!-- Submit -->
+    <div class="submit-section">
+      <button class="btn-submit" id="submitBtn" onclick="submitQuiz()">提交</button>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="score-display">
+      <h2 id="scoreTitle" style="margin-bottom:16px;color:#333;">你的成绩</h2>
+      <div class="score-circle" id="scoreCircle">
+        <span class="score-number" id="scoreNumber">0</span>
+        <span class="score-total">/ 100</span>
+      </div>
+      <div class="score-label" id="scoreLabel"></div>
+      <div class="q-results-grid" id="qResultsGrid"></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-details" id="detailsBtn" onclick="showDetails()">查看详情</button>
+      <button class="btn-retake" id="retakeBtn" onclick="retakeQuiz()">重新测试</button>
+    </div>
+  </div>
+
+  <!-- Details Section (questions with answers revealed) -->
+  <div id="detailsSection" class="hidden"></div>
+
+  <div class="footer">Powered by GitHub Pages</div>
+</div>
+
+<script>
+// ==================== i18n ====================
+let lang = localStorage.getItem('quizLang') || 'zh';
+
+const UI = {
+  title:       { zh: '医学测验：休克', en: 'Medical Quiz: Shock' },
+  infoTitle:   { zh: '学生信息', en: 'Student Info' },
+  nameLabel:   { zh: '姓名 *', en: 'Name *' },
+  idLabel:     { zh: '学号', en: 'Student ID' },
+  submit:      { zh: '提交', en: 'Submit' },
+  scoreTitle:  { zh: '你的成绩', en: 'Your Score' },
+  details:     { zh: '查看详情', en: 'View Details' },
+  retake:      { zh: '重新测试', en: 'Retake Quiz' },
+  hideDetails: { zh: '收起详情', en: 'Hide Details' },
+  correct:     { zh: '正确', en: 'Correct' },
+  wrong:       { zh: '错误', en: 'Wrong' },
+  pts:         { zh: '分', en: 'pts' },
+  qNum:        { zh: '第{n}题', en: 'Q{n}' },
+  excellent:   { zh: '优秀！', en: 'Excellent!' },
+  good:        { zh: '良好', en: 'Good' },
+  fair:        { zh: '及格', en: 'Fair' },
+  needsWork:   { zh: '需要加油', en: 'Needs Improvement' },
+  nameRequired:{ zh: '请填写姓名', en: 'Please enter your name' },
+  answerAll:   { zh: '请回答所有题目', en: 'Please answer all questions' },
+  explanation: { zh: '解析', en: 'Explanation' },
+  yourAnswer:  { zh: '你的答案', en: 'Your Answer' },
+  correctAnswer:{ zh: '正确答案', en: 'Correct Answer' },
+};
+
+function t(key) { return UI[key] ? (UI[key][lang] || UI[key].zh) : key; }
+
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('quizLang', lang);
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'EN' : '中文';
+  applyLang();
+}
+
+function applyLang() {
+  document.getElementById('title').textContent = t('title');
+  document.getElementById('infoTitle').textContent = t('infoTitle');
+  document.getElementById('nameLabel').textContent = t('nameLabel');
+  document.getElementById('idLabel').textContent = t('idLabel');
+  document.getElementById('submitBtn').textContent = t('submit');
+  document.getElementById('scoreTitle').textContent = t('scoreTitle');
+  document.getElementById('detailsBtn').textContent = t('details');
+  document.getElementById('retakeBtn').textContent = t('retake');
+  renderQuestions();
+  if (lastResult) renderResults(lastResult);
+}
+
+// ==================== Questions ====================
+const QUESTIONS = [
+  {
+    id: 1,
+    stem: {
+      zh: '一名68岁男性，腹痛/呕吐3天。T 36.2°C，P 120次/分，R 28次/分，BP 80/50 mmHg。意识模糊，皮肤湿冷，毛细血管再充盈时间（CRT）>3秒。最可能的诊断是？',
+      en: 'A 68-year-old male with abdominal pain/vomiting for 3 days. T 36.2°C, P 120, R 28, BP 80/50. Confused, cold clammy skin, CRT >3s. Most likely diagnosis?'
+    },
+    options: [
+      { key: 'A', zh: '心源性休克', en: 'Cardiogenic shock' },
+      { key: 'B', zh: '低血容量性休克', en: 'Hypovolemic shock' },
+      { key: 'C', zh: '感染性休克', en: 'Septic shock' },
+      { key: 'D', zh: '神经源性休克', en: 'Neurogenic shock' }
+    ],
+    answer: 'B',
+    explanation: {
+      zh: '该患者有体液丢失病史（呕吐3天）加上冷湿皮肤、颈静脉塌陷等体征，符合低血容量性休克的典型表现。低血容量性休克的特征为循环血量不足导致组织灌注不良。',
+      en: 'History of volume loss (vomiting × 3 days) + cold/clammy skin + flat veins = hypovolemic shock. Hypovolemic shock is characterized by inadequate circulating volume leading to poor tissue perfusion.'
+    }
+  },
+  {
+    id: 2,
+    stem: {
+      zh: '休克初始液体复苏的首选液体是？',
+      en: 'First-line fluid for initial resuscitation in shock?'
+    },
+    options: [
+      { key: 'A', zh: '5%葡萄糖溶液', en: '5% Dextrose' },
+      { key: 'B', zh: '碳酸氢钠溶液', en: 'Sodium bicarbonate' },
+      { key: 'C', zh: '平衡晶体液（乳酸林格液）', en: 'Balanced crystalloid (Ringer\'s Lactate)' },
+      { key: 'D', zh: '血浆', en: 'Plasma' }
+    ],
+    answer: 'C',
+    explanation: {
+      zh: '根据2021年拯救脓毒症运动（SSC）指南，推荐使用晶体液进行初始复苏；平衡盐溶液（如乳酸林格液）优于生理盐水（NS），可减少高氯性酸中毒的风险。',
+      en: 'SSC 2021 guidelines recommend crystalloids for initial resuscitation; balanced solutions (like Ringer\'s Lactate) are preferred over normal saline (NS) to reduce the risk of hyperchloremic acidosis.'
+    }
+  },
+  {
+    id: 3,
+    stem: {
+      zh: '张力性气胸导致哪种类型的休克？',
+      en: 'Tension pneumothorax causes which type of shock?'
+    },
+    options: [
+      { key: 'A', zh: '低血容量性休克', en: 'Hypovolemic' },
+      { key: 'B', zh: '心源性休克', en: 'Cardiogenic' },
+      { key: 'C', zh: '分布性休克', en: 'Distributive' },
+      { key: 'D', zh: '梗阻性休克', en: 'Obstructive' }
+    ],
+    answer: 'D',
+    explanation: {
+      zh: '张力性气胸通过机械性压迫导致静脉回流受阻和心输出量下降，属于梗阻性休克。其他梗阻性休克的原因包括心包填塞和大面积肺栓塞。',
+      en: 'Tension pneumothorax causes mechanical obstruction to venous return and cardiac output, classifying it as obstructive shock. Other causes include cardiac tamponade and massive pulmonary embolism.'
+    }
+  },
+  {
+    id: 4,
+    stem: {
+      zh: '在早期感染性休克（暖休克）中，以下哪项是其特征性表现？',
+      en: 'In early septic shock (warm shock), which finding is characteristic?'
+    },
+    options: [
+      { key: 'A', zh: '皮肤湿冷', en: 'Cold clammy skin' },
+      { key: 'B', zh: '脉搏细弱', en: 'Weak thready pulse' },
+      { key: 'C', zh: '显著低血压', en: 'Significant hypotension' },
+      { key: 'D', zh: '皮肤温暖潮红，脉搏洪大', en: 'Warm flushed skin, bounding pulse' }
+    ],
+    answer: 'D',
+    explanation: {
+      zh: '早期感染性休克（暖休克阶段）的特征是血管扩张，心输出量代偿性增高，表现为皮肤温暖潮红、脉搏洪大。随着病情进展到晚期（冷休克），才出现皮肤湿冷、脉搏细弱等表现。',
+      en: 'Early septic shock (warm shock phase) features vasodilation with compensatory high cardiac output, presenting as warm flushed skin and bounding pulse. As it progresses to late (cold shock), cold clammy skin and weak pulse appear.'
+    }
+  },
+  {
+    id: 5,
+    stem: {
+      zh: '所有类型休克的共同病理生理基础是？',
+      en: 'The common pathophysiological basis of ALL types of shock is?'
+    },
+    options: [
+      { key: 'A', zh: '心输出量下降', en: 'Decreased cardiac output' },
+      { key: 'B', zh: '循环血量减少', en: 'Decreased circulating volume' },
+      { key: 'C', zh: '组织灌注不足', en: 'Inadequate tissue perfusion' },
+      { key: 'D', zh: '外周血管阻力下降', en: 'Decreased SVR' }
+    ],
+    answer: 'C',
+    explanation: {
+      zh: '尽管不同类型休克的发病机制各异（低血容量、心功能不全、血管扩张、机械梗阻），但所有类型休克的最终共同通路都是组织灌注不足，导致细胞缺氧和器官功能障碍。',
+      en: 'Despite different mechanisms across shock types (hypovolemia, cardiac dysfunction, vasodilation, mechanical obstruction), all share inadequate tissue perfusion as the final common pathway, leading to cellular hypoxia and organ dysfunction.'
+    }
+  }
+];
+
+// ==================== Rendering ====================
+let lastResult = null;
+let detailsVisible = false;
+
+function renderQuestions() {
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = '';
+  QUESTIONS.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'qcard-' + q.id;
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-number">${t('qNum').replace('{n}', q.id)}</span>
+        <span class="q-points">20 ${t('pts')}</span>
+      </div>
+      <div class="q-stem">${q.stem[lang]}</div>
+      <div class="options">
+        ${q.options.map(opt => `
+          <label class="option-label" id="opt-${q.id}-${opt.key}">
+            <input type="radio" name="q${q.id}" value="${opt.key}">
+            <span class="radio-custom"></span>
+            <span class="option-text">${opt.key}. ${opt[lang]}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ==================== Submit ====================
+function submitQuiz() {
+  const name = document.getElementById('studentName').value.trim();
+  if (!name) {
+    alert(t('nameRequired'));
+    document.getElementById('studentName').focus();
+    return;
+  }
+
+  const answers = {};
+  let allAnswered = true;
+  let firstUnanswered = null;
+
+  QUESTIONS.forEach(q => {
+    const card = document.getElementById('qcard-' + q.id);
+    const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+    if (selected) {
+      answers[q.id] = selected.value;
+      card.classList.remove('unanswered');
+    } else {
+      allAnswered = false;
+      card.classList.add('unanswered');
+      if (!firstUnanswered) firstUnanswered = card;
+    }
+  });
+
+  if (!allAnswered) {
+    firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // Calculate score
+  let score = 0;
+  const results = [];
+  QUESTIONS.forEach(q => {
+    const isCorrect = answers[q.id] === q.answer;
+    if (isCorrect) score += 20;
+    results.push({ qId: q.id, selected: answers[q.id], correct: q.answer, isCorrect });
+  });
+
+  lastResult = {
+    studentName: name,
+    studentId: document.getElementById('studentId').value.trim(),
+    answers: Object.values(answers),
+    score,
+    correctCount: results.filter(r => r.isCorrect).length,
+    results,
+    timestamp: new Date().toISOString()
+  };
+
+  // Save to localStorage
+  saveResult(lastResult);
+
+  // Show results
+  document.getElementById('quizForm').classList.add('hidden');
+  document.getElementById('resultsPanel').classList.add('visible');
+  renderResults(lastResult);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderResults(result) {
+  const { score, results } = result;
+
+  // Score circle
+  const circle = document.getElementById('scoreCircle');
+  circle.className = 'score-circle ' + (score >= 80 ? 'high' : score >= 60 ? 'mid' : 'low');
+  document.getElementById('scoreNumber').textContent = score;
+
+  // Score label
+  const label = score >= 80 ? t('excellent') : score >= 60 ? t('good') : score >= 40 ? t('fair') : t('needsWork');
+  document.getElementById('scoreLabel').textContent = label;
+
+  // Per-question badges
+  const grid = document.getElementById('qResultsGrid');
+  grid.innerHTML = results.map(r =>
+    `<span class="q-result-badge ${r.isCorrect ? 'correct' : 'wrong'}">
+      ${t('qNum').replace('{n}', r.qId)} ${r.isCorrect ? '✓' : '✗'}
+    </span>`
+  ).join('');
+}
+
+// ==================== Details ====================
+function showDetails() {
+  if (detailsVisible) {
+    document.getElementById('detailsSection').classList.add('hidden');
+    document.getElementById('detailsBtn').textContent = t('details');
+    detailsVisible = false;
+    return;
+  }
+
+  const section = document.getElementById('detailsSection');
+  section.classList.remove('hidden');
+  section.innerHTML = '';
+
+  QUESTIONS.forEach((q, idx) => {
+    const r = lastResult.results[idx];
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-number">${t('qNum').replace('{n}', q.id)}</span>
+        <span class="q-result-badge ${r.isCorrect ? 'correct' : 'wrong'}">${r.isCorrect ? '✓ ' + t('correct') : '✗ ' + t('wrong')}</span>
+      </div>
+      <div class="q-stem">${q.stem[lang]}</div>
+      <div class="options">
+        ${q.options.map(opt => {
+          let cls = '';
+          if (opt.key === q.answer) cls = 'correct-answer';
+          else if (opt.key === r.selected && !r.isCorrect) cls = 'wrong-answer';
+          return `
+            <label class="option-label ${cls}">
+              <input type="radio" ${opt.key === r.selected ? 'checked' : ''} disabled>
+              <span class="radio-custom"></span>
+              <span class="option-text">${opt.key}. ${opt[lang]}</span>
+            </label>`;
+        }).join('')}
+      </div>
+      <div class="explanation visible">
+        <strong>${t('explanation')}:</strong> ${q.explanation[lang]}
+      </div>
+    `;
+    section.appendChild(card);
+  });
+
+  document.getElementById('detailsBtn').textContent = t('hideDetails');
+  detailsVisible = true;
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==================== Retake ====================
+function retakeQuiz() {
+  lastResult = null;
+  detailsVisible = false;
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('detailsSection').classList.add('hidden');
+  document.getElementById('quizForm').classList.remove('hidden');
+  renderQuestions();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==================== Storage ====================
+function saveResult(result) {
+  try {
+    const key = 'shockQuizResults';
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.push(result);
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch (e) {
+    console.warn('Failed to save result:', e);
+  }
+}
+
+// ==================== Init ====================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'EN' : '中文';
+  applyLang();
+});
+</script>
+</body>
+</html>
