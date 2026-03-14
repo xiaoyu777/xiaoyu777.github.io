@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -267,6 +269,19 @@ tr:hover td { background: #f8fbfd; }
   color: #aaa;
 }
 
+.storage-banner {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.storage-banner.firebase { background: #e8f5e9; color: #2e7d32; }
+.storage-banner.local { background: #fff3e0; color: #e65100; }
+
 /* Footer */
 .footer { text-align: center; padding: 16px; color: #aaa; font-size: 0.75rem; }
 
@@ -295,6 +310,9 @@ tr:hover td { background: #f8fbfd; }
       <button class="btn-sm" onclick="logout()" id="logoutBtn">退出</button>
     </div>
   </div>
+
+  <!-- Storage Mode Banner -->
+  <div class="storage-banner" id="storageBanner"></div>
 
   <!-- QR Code -->
   <div class="qr-section">
@@ -441,8 +459,11 @@ function logout() {
 function showDashboard() {
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('dashboard').classList.remove('hidden');
+  initFirebase();
+  updateStorageBanner();
   generateQR();
   refreshData();
+  startFirebaseListener();
 }
 
 // ==================== QR Code ====================
@@ -455,11 +476,69 @@ function generateQR() {
   document.getElementById('qrUrl').textContent = url;
 }
 
+// ==================== Firebase Config ====================
+// >>> SETUP: Same config as in index.html <<<
+const FIREBASE_ENABLED = false; // <-- Set to true after configuring
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let firebaseDB = null;
+let firebaseListener = null;
+
+function initFirebase() {
+  if (!FIREBASE_ENABLED) return false;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDB = firebase.database();
+    return true;
+  } catch (e) {
+    console.warn('Firebase init failed:', e);
+    return false;
+  }
+}
+
+function updateStorageBanner() {
+  const banner = document.getElementById('storageBanner');
+  if (firebaseDB) {
+    banner.className = 'storage-banner firebase';
+    banner.innerHTML = lang === 'zh'
+      ? '&#9889; Firebase 已连接 — 实时同步所有学生数据'
+      : '&#9889; Firebase connected — real-time sync across all devices';
+  } else {
+    banner.className = 'storage-banner local';
+    banner.innerHTML = lang === 'zh'
+      ? '&#9888; 本地模式 — 仅显示本浏览器提交的数据。配置 Firebase 后可实现跨设备数据同步。'
+      : '&#9888; Local mode — only showing data from this browser. Configure Firebase for cross-device sync.';
+  }
+}
+
 // ==================== Data ====================
-function getResults() {
+function getResultsFromLocal() {
   try {
     return JSON.parse(localStorage.getItem('shockQuizResults') || '[]');
   } catch { return []; }
+}
+
+function startFirebaseListener() {
+  if (!firebaseDB) return;
+  const ref = firebaseDB.ref('shockQuizResults');
+  firebaseListener = ref.on('value', (snapshot) => {
+    const data = snapshot.val();
+    let results = [];
+    if (data) {
+      results = Object.values(data);
+    }
+    updateStats(results);
+    updateCharts(results);
+    updateTable(results);
+  });
 }
 
 const CORRECT_ANSWERS = ['B', 'C', 'D', 'D', 'C'];
@@ -468,10 +547,21 @@ let distChart = null;
 let accChart = null;
 
 function refreshData() {
-  const results = getResults();
-  updateStats(results);
-  updateCharts(results);
-  updateTable(results);
+  if (firebaseDB) {
+    // Firebase listener handles updates automatically; trigger a manual read
+    firebaseDB.ref('shockQuizResults').once('value').then((snapshot) => {
+      const data = snapshot.val();
+      const results = data ? Object.values(data) : [];
+      updateStats(results);
+      updateCharts(results);
+      updateTable(results);
+    });
+  } else {
+    const results = getResultsFromLocal();
+    updateStats(results);
+    updateCharts(results);
+    updateTable(results);
+  }
 }
 
 function updateStats(results) {
@@ -635,9 +725,16 @@ function exportCSV() {
 }
 
 // ==================== Clear Data ====================
-function clearData() {
+async function clearData() {
   if (!confirm(t('confirmClear'))) return;
   localStorage.removeItem('shockQuizResults');
+  if (firebaseDB) {
+    try {
+      await firebaseDB.ref('shockQuizResults').remove();
+    } catch (e) {
+      console.warn('Firebase clear failed:', e);
+    }
+  }
   refreshData();
 }
 

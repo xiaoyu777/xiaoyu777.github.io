@@ -6,6 +6,8 @@
 <title>Medical Quiz: Shock / 医学测验：休克</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -747,20 +749,65 @@ function retakeQuiz() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ==================== Firebase Config ====================
+// >>> SETUP INSTRUCTIONS <<<
+// 1. Go to https://console.firebase.google.com and create a project
+// 2. In project settings, add a Web app to get your config
+// 3. Go to Realtime Database > Create Database > Start in test mode
+// 4. Replace the placeholder values below with your actual config
+// 5. Set FIREBASE_ENABLED = true
+const FIREBASE_ENABLED = false; // <-- Set to true after configuring
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let firebaseDB = null;
+
+function initFirebase() {
+  if (!FIREBASE_ENABLED) return false;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDB = firebase.database();
+    console.log('Firebase connected');
+    return true;
+  } catch (e) {
+    console.warn('Firebase init failed, using localStorage:', e);
+    return false;
+  }
+}
+
 // ==================== Storage ====================
-function saveResult(result) {
+async function saveResult(result) {
+  // Always save to localStorage as backup
   try {
     const key = 'shockQuizResults';
     const existing = JSON.parse(localStorage.getItem(key) || '[]');
     existing.push(result);
     localStorage.setItem(key, JSON.stringify(existing));
   } catch (e) {
-    console.warn('Failed to save result:', e);
+    console.warn('localStorage save failed:', e);
+  }
+
+  // Also save to Firebase if enabled
+  if (firebaseDB) {
+    try {
+      await firebaseDB.ref('shockQuizResults').push(result);
+      console.log('Result saved to Firebase');
+    } catch (e) {
+      console.warn('Firebase save failed:', e);
+    }
   }
 }
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
+  initFirebase();
   document.getElementById('langBtn').textContent = lang === 'zh' ? 'EN' : '中文';
   applyLang();
 });
